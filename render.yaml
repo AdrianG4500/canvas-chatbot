@@ -3,4 +3,4 @@ services:
     name: canvas-chatbot
     env: python
     buildCommand: ""
-    startCommand: python main.py
+    startCommand: python app.py
