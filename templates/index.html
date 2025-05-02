@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Canvas Chatbot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Canvas Chatbot</h1>
+
+    <!-- Formulario de entrada -->
+    <form method="POST">
+      <input type="text" name="pregunta" placeholder="Haz tu pregunta aquí..." required>
+      <button type="submit">Enviar</button>
+    </form>
+
+    <!-- Respuesta del asistente -->
+    <h2>Respuesta:</h2>
+    <div class="respuesta">
+      {% if respuesta %}
+        {{ respuesta|safe }}
+      {% else %}
+        <p>No hay respuesta aún.</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Panel de Administración</h1>
+
+    <!-- Botón para forzar descarga -->
+    <p><a href="/descargar"><button>🔄 Forzar descarga y actualización</button></a></p>
+
+    <!-- Tabla de archivos procesados -->
+    <h2>📂 Archivos procesados (DB)</h2>
+    <table border="1" width="100%">
+      <tr>
+        <th>ID Canvas</th>
+        <th>Nombre</th>
+        <th>Última actualización</th>
+        <th>ID OpenAI</th>
+      </tr>
+      {% for r in registros %}
+      <tr>
+        <td>{{ r[0] }}</td>
+        <td>{{ r[1] }}</td>
+        <td>{{ r[2] }}</td>
+        <td>{{ r[3] or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <!-- Lista de archivos en vector store -->
+    <h2>📚 Archivos en Vector Store</h2>
+    {% if archivos_vs | length > 0 %}
+      <ul>
+        {% for f in archivos_vs %}
+          <li>{{ f.name }} (ID: {{ f.id }})</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No hay archivos en el vector store.</p>
+    {% endif %}
+
+  </div>
+</body>
+</html>
