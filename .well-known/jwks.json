@@ -1,0 +1,12 @@
+{
+  "keys": [
+    {
+        "kty": "RSA",
+        "e": "AQAB",
+        "use": "sig",
+        "kid": "lti-13-key-TEST",
+        "alg": "RS256",
+        "n": "3WTeFsAgwY9vyIJBxmool3M6HX0y0msUQgERtTeCrAWrXigxXt4913S0b7ySHnNht-GJ5us0o6tGec5O_WQh0soJvow2B-0coSUk5dqdwffmP6dQ7EU7G0G3mYuihBfFF1HYhmA4RutTy6bqBj-mEVwuPUxamAr6AmK9u1-dJkgllJmkju8TkES7K_xlNd-jgr-F3psfiQni3gtHsHOhJfZDJI0OI1GTK_q45cfL7LSbK-birsdxGlACKhaT9Dx0fPzc2-DVDOJ9UVBEzb0PCh_7ocQ3D6V8pt1jqHkET9-iOKTG0degzZbw7ezvHXwDMD3HFhTwbJrheHxZ_BgT"
+    }
+  ]
+}

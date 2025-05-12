@@ -42,67 +42,68 @@ def extraer_fuentes(texto):
     return list(set(coincidencias))
 
 
-
 # === RUTA RAÍZ: Chat con el assistant ===
 @app.route("/", methods=["GET", "POST"])
 def index():
     respuesta_formateada = None  # Inicialización segura
 
-    user_id = session.get("user_id")
-    course_id = session.get("course_id")
-
     if request.method == "POST":
-        if not user_id or not course_id:
-            respuesta_formateada = "⚠️ No se pudo identificar al usuario o curso."
-        elif not registrar_consulta(user_id, course_id):
-            respuesta_formateada = "🚫 Has alcanzado el límite mensual de 10 consultas. Vuelve el próximo mes."
-        else:
-            try:
-                pregunta = request.form["pregunta"]
-                thread = openai.beta.threads.create()
-                openai.beta.threads.messages.create(
-                    thread_id=thread.id,
-                    role="user",
-                    content=pregunta
-                )
-                run = openai.beta.threads.runs.create(
-                    thread_id=thread.id,
-                    assistant_id=ASSISTANT_ID
-                )
+        try:
+            pregunta = request.form["pregunta"]
+            thread = openai.beta.threads.create()
+            openai.beta.threads.messages.create(
+                thread_id=thread.id,
+                role="user",
+                content=pregunta
+            )
+            run = openai.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=ASSISTANT_ID
+            )
 
-                # Esperar respuesta sincronamente
-                while run.status not in ["completed", "failed"]:
-                    time.sleep(1)
-                    run = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+            # Esperar respuesta sincronamente
+            while run.status not in ["completed", "failed"]:
+                time.sleep(1)
+                run = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 
-                messages = openai.beta.threads.messages.list(thread_id=thread.id)
-                respuesta_bruta = messages.data[0].content[0].text.value
+            messages = openai.beta.threads.messages.list(thread_id=thread.id)
+            respuesta_bruta = messages.data[0].content[0].text.value
 
-                # Limpiar y separar fuentes
-                texto_final, fuentes = limpiar_y_separar(respuesta_bruta)
+            # Limpiar y separar fuentes
+            texto_final, fuentes = limpiar_y_separar(respuesta_bruta)
 
-                # Formatear con emojis y estructura básica
-                respuesta_formateada = ""
+            # Formatear con emojis y estructura básica
+            respuesta_formateada = ""
 
-                if texto_final:
-                    respuesta_formateada += "🎯 **Respuesta Detallada:**\n\n"
-                    parrafos = texto_final.split('\n')
-                    for p in parrafos:
-                        if p.strip():
-                            respuesta_formateada += f"{p}\n"
+            if texto_final:
+                # Añadir título visual
+                respuesta_formateada += "🎯 **Respuesta Detallada:**\n\n"
 
-                    if fuentes:
-                        respuesta_formateada += "\n\n📚 **Fuentes utilizadas:**\n"
-                        for i, fuente in enumerate(fuentes, 1):
-                            respuesta_formateada += f"{i}. *{fuente}*\n"
-                else:
-                    respuesta_formateada = "❌ No se encontró información clara para responder."
+                # Dividir en párrafos, pero sin saltos múltiples
+                parrafos = texto_final.split('\n')
+                for p in parrafos:
+                    if p.strip():
+                        respuesta_formateada += f"{p}\n"    
 
-            except Exception as e:
-                respuesta_formateada = f"⚠️ Error al obtener respuesta: {str(e)}"
+                # Añadir fuentes al final
+                if fuentes:
+                    respuesta_formateada += "\n\n📚 **Fuentes utilizadas:**\n"
+                    for i, fuente in enumerate(fuentes, 1):
+                        respuesta_formateada += f"{i}. *{fuente}*\n"
+            else:
+                respuesta_formateada = "❌ No se encontró información clara para responder."
 
-    respuesta_html = markdown(respuesta_formateada) if respuesta_formateada else None
+        except Exception as e:
+            respuesta_formateada = f"⚠️ Error al obtener respuesta: {str(e)}"
+
+    # Usar markdown solo si hay contenido
+    if respuesta_formateada:
+        respuesta_html = markdown(respuesta_formateada)
+    else:
+        respuesta_html = None
+
     return render_template("index.html", respuesta=respuesta_html)
+
 
 
 
@@ -209,30 +210,24 @@ def admin():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Archivos procesados
+    # 1. Listar archivos procesados en la base de datos
     cursor.execute("SELECT * FROM archivos_procesados")
     registros_db = cursor.fetchall()
 
-    # Archivos en vector store
+    # 2. Listar archivos en el vector store actual
     try:
         archivos_vs = listar_archivos_vector_store()
     except Exception as e:
         archivos_vs = []
         print(f"⚠️ Error al obtener archivos del vector store: {e}")
 
-    # Consultas realizadas
-    cursor.execute("SELECT user_id, course_id, mes, total FROM consultas ORDER BY mes DESC")
-    registros_consulta = cursor.fetchall()
-
     conn.close()
 
     return render_template(
         "admin.html",
         registros=registros_db,
-        archivos_vs=archivos_vs,
-        consultas=registros_consulta
+        archivos_vs=archivos_vs
     )
-
 
 @app.route("/eliminar/<canvas_file_id>", methods=["POST"])
 def eliminar_archivo(canvas_file_id):
@@ -290,10 +285,10 @@ def lti_login():
     # Aquí redirigimos a /lti/callback con datos mínimos
     return redirect(f"{redirect_uri}?state={state}&id_token=FAKE_JWT_TOKEN")
 
-@app.route("/lti/launch", methods=["POST"])
+@app.route('/lti/launch', methods=['POST'])
 def lti_launch():
-    id_token = request.form.get("id_token")
-    state = request.form.get("state")
+    id_token = request.form.get('id_token')
+    state = request.form.get('state')
 
     if not id_token:
         return "❌ No se recibió id_token", 400
@@ -302,12 +297,8 @@ def lti_launch():
         import jwt
         decoded = jwt.decode(id_token, options={"verify_signature": False})
 
-        # Guardar identificadores únicos en la sesión
-        session["user_id"] = decoded.get("sub")
-        session["course_id"] = decoded.get("https://purl.imsglobal.org/spec/claim/context", {}).get("id")
-
-        username = decoded.get("name", "Estudiante")
-        course = decoded.get("https://purl.imsglobal.org/spec/claim/context", {}).get("label", "Curso Desconocido")
+        username = decoded.get('name', 'Estudiante')
+        course = decoded.get('https://purl.imsglobal.org/spec/claim/context', {}).get('label', 'Curso Desconocido')
 
         return render_template("lti.html", username=username, course=course, decoded=decoded)
     except Exception as e:

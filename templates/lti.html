@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Canvas - ChatBot</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+    }
+    header {
+      background: #2a6dff;
+      color: white;
+      padding: 1em;
+      text-align: center;
+    }
+    .info {
+      padding: 1em;
+      text-align: center;
+    }
+    iframe {
+      display: block;
+      width: 100%;
+      height: calc(100vh - 150px);
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Hola {{ username }} 👋</h1>
+    <p>Estás en el curso: <strong>{{ course }}</strong></p>
+  </header>
+
+  <div class="info">
+    <p>Tu asistente inteligente está disponible abajo:</p>
+  </div>
+
+  <!-- Aquí se incrusta tu app real como iframe -->
+  <iframe src="https://canvas-chatbot-vr2h.onrender.com"></iframe>
+
+</body>
+</html>
