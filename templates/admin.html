@@ -43,6 +43,30 @@
       <p>No hay archivos en el vector store.</p>
     {% endif %}
 
+    <!-- Tabla de uso de consultas por usuario -->
+    <h2>🧾 Consultas realizadas por estudiantes</h2>
+    {% if consultas | length > 0 %}
+      <table border="1" width="100%">
+        <tr>
+          <th>User ID</th>
+          <th>Course ID</th>
+          <th>Mes</th>
+          <th>Consultas realizadas</th>
+        </tr>
+        {% for c in consultas %}
+        <tr>
+          <td>{{ c[0] }}</td>
+          <td>{{ c[1] }}</td>
+          <td>{{ c[2] }}</td>
+          <td>{{ c[3] }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p>No se han registrado consultas aún.</p>
+    {% endif %}
+
+
   </div>
 </body>
 </html>
