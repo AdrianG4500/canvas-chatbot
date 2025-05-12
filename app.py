@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from config import ASSISTANT_ID, PORT, TEMP_DIR, VECTOR_STORE_ID, ASSISTANT_ID
 from canvas.downloader import get_all_course_files, download_file
 from openai_utils.uploader import subir_y_asociar_archivo, listar_archivos_vector_store
