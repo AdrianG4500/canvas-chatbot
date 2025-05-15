@@ -7,12 +7,17 @@ import jwt
 import secrets
 import os
 from datetime import datetime, timedelta
-from config import PORT, LTI_CLIENT_IDS, VECTOR_STORE_ID, ASSISTANT_ID
+from config import PORT, LTI_CLIENT_IDS, VECTOR_STORE_ID, ASSISTANT_ID, SECRET_KEY
 
 # Crear la aplicación Flask
 app = Flask(__name__)
 
-app.secret_key = "super-secret-key-for-dev"
+app.secret_key = SECRET_KEY
+
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=True,  # Solo funciona en HTTPS, Render usa HTTPS
+)
 
 # Cargar claves
 PRIVATE_KEY = None

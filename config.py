@@ -8,6 +8,7 @@ load_dotenv()
 CANVAS_TOKEN = os.getenv("CANVAS_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PORT = int(os.getenv("PORT", 5000))
+SECRET_KEY = (os.environ['SECRET_KEY'])
 
 # Canvas
 CANVAS_BASE_URL = 'https://canvas.instructure.com/api/v1'
