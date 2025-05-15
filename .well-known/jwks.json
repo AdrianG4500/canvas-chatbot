@@ -1,12 +1,12 @@
 {
   "keys": [
     {
-        "kty": "RSA",
-        "e": "AQAB",
-        "use": "sig",
-        "kid": "lti-13-key-TEST",
-        "alg": "RS256",
-        "n": "3WTeFsAgwY9vyIJBxmool3M6HX0y0msUQgERtTeCrAWrXigxXt4913S0b7ySHnNht-GJ5us0o6tGec5O_WQh0soJvow2B-0coSUk5dqdwffmP6dQ7EU7G0G3mYuihBfFF1HYhmA4RutTy6bqBj-mEVwuPUxamAr6AmK9u1-dJkgllJmkju8TkES7K_xlNd-jgr-F3psfiQni3gtHsHOhJfZDJI0OI1GTK_q45cfL7LSbK-birsdxGlACKhaT9Dx0fPzc2-DVDOJ9UVBEzb0PCh_7ocQ3D6V8pt1jqHkET9-iOKTG0degzZbw7ezvHXwDMD3HFhTwbJrheHxZ_BgT"
+      "kty": "RSA",
+      "n": "sH8_-uavYxkWoEXm0QHDrZbfWByo0pEQdpy-EEdiQU_LVxlS4Et-ArUVq28hf1PRgGxRGEMzVXddyUgrrYuPV_17okqZZshfJnjqUpcN5d-mkyIs3XO-DLqI2UIoNXtEP5zlWvJTkqzUUlXg9y3QIHM_-1j8G3KeJKxIhezuLIUMJLSfJv3CgKF6CHPCT0JLPbOEStDCzzqQwIulDhU3Ts6N4CPttOoG8w9FS0Z6fJjYWeeztAtstBggXw4_Hgq7_-TaxV8tct5rWighV50Z5SJA1xi7w4GlfvV4EpwixUfSOZzAN_RAzFoiq6MgBCl-rtb7mCAxuSfkD5xSoMe0rw",
+      "e": "AQAB",
+      "alg": "RS256",
+      "use": "sig",
+      "kid": "6ox0b5ag4w"
     }
   ]
 }

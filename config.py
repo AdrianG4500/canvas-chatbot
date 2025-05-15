@@ -17,6 +17,9 @@ COURSE_ID = '91340000000002198'
 ASSISTANT_ID = "asst_ryh6oDCgELAkuGctOQSul9ar"
 VECTOR_STORE_ID = "vs_67efafcb3f988191a08a2c7e07ee73e7"
 
+# LTI
+LTI_CLIENT_IDS = ["test_client_canvas_123"]
+
 # Ruta a la base de datos
 DB_PATH = os.getenv("DB_PATH", "archivos.db")
 

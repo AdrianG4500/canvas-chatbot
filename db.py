@@ -77,3 +77,19 @@ def registrar_consulta(user_id, course_id):
     conn.commit()
     conn.close()
     return True
+
+def get_nro_consultas(user_id, course_id):
+    conn = get_db_connection()
+    conn.row_factory = sqlite3.Row
+    mes_actual = datetime.now().strftime('%Y-%m')
+
+    consulta = conn.execute(
+        "SELECT total FROM consultas WHERE user_id = ? AND course_id = ? AND mes = ?",
+        (user_id, course_id, mes_actual)
+    ).fetchone()
+
+    print(consulta['total'])
+
+    conn.commit()
+    conn.close()
+    return consulta['total']

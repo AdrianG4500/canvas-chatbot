@@ -1,0 +1,140 @@
+# routes/lti_routes.py
+
+from flask import Blueprint, request, render_template, session, current_app, redirect
+import jwt
+import requests
+import json
+from datetime import datetime, timedelta
+import secrets
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+from urllib.parse import urlencode
+
+
+lti_bp = Blueprint('lti', __name__, url_prefix="/lti")
+
+CLAIM_CONTEXT = "https://purl.imsglobal.org/spec/lti/claim/context"
+
+LTI_MESSAGE_HINT = "My LTI message hint!"  # Bien usado
+
+# Cargar clave pública desde archivo PEM
+def load_public_key():
+    try:
+        with open("public_key.pem", "rb") as f:
+            public_key = serialization.load_pem_public_key(
+                f.read(),
+                backend=default_backend()
+            )
+        return public_key
+    except Exception as e:
+        print(f"❌ Error cargando clave pública: {e}")
+        return None
+
+
+@lti_bp.route('/.well-known/jwks.json')
+def jwks():
+    with open('.well-known/jwks.json', 'r') as f:
+        jwks_data = json.load(f)
+    return jwks_data, 200, {'Content-Type': 'application/json'}
+
+# LTI Login (GET)
+@lti_bp.route("/login", methods=["GET"])
+def login():
+    # Generar state y nonce aleatorios
+    state = secrets.token_urlsafe(16)
+    nonce = secrets.token_urlsafe(16)
+    session['state'] = state
+    session['nonce'] = nonce
+
+    print("📩 Datos recibidos en /lti/login:")
+    print(dict(request.args))
+
+    # Asegura los parámetros obligatorios
+    iss = request.args.get("iss")
+    login_hint = request.args.get("login_hint")
+    target_link_uri = request.args.get("target_link_uri")
+    lti_message_hint = request.args.get("lti_message_hint", "")
+    client_id = request.args.get("client_id")
+    lti_deployment_id = request.args.get("lti_deployment_id", "")
+
+    if not all([login_hint, target_link_uri, client_id]):
+        return "Faltan parámetros", 400
+
+    
+    
+    base_url = iss.rstrip("/") + "/auth?"
+    # ✅ Redirigimos a la autenticación real de la plataforma
+    params = {
+        "scope": "openid",
+        "response_type": "id_token",
+        "client_id": client_id,
+        "redirect_uri": target_link_uri,
+        "login_hint": login_hint,
+        "state": state,
+        "nonce": nonce,
+        "response_mode": "form_post",
+        "prompt": "none",  # Cambia a "login" para debug si quieres
+        "lti_message_hint": lti_message_hint,
+        "lti_deployment_id": lti_deployment_id,
+        "id_token_signed_response_alg": "RS256"
+    }
+
+    auth_url = base_url + urlencode(params)
+
+    print(auth_url)
+    return redirect(auth_url)
+
+@lti_bp.route("/launch", methods=["POST"])  
+def launch():
+    print("✅ Launch iniciado")
+
+    received_state = request.form.get('state')
+    expected_state = session.get('state')
+
+    if not received_state or received_state != expected_state:
+        print(f"❌ State no coincide: esperado {expected_state} - recibido {received_state}")
+        return "Estado inválido", 400
+
+
+    #print("⭐Args:", dict(request.args))
+    #print("🔵Form:", dict(request.form))
+    #print("🔻Headers:", dict(request.headers))
+    #print("📢 Data cruda:", request.get_data())
+
+    id_token = request.form.get('id_token')
+
+    if not id_token:
+        print("❌ No se recibió id_token")
+        return "Falta id_token", 400
+
+    try:
+        jwks_url = "https://saltire.lti.app/platform/jwks/12d80322c307658029cc1db9923ec250"
+        jwks = requests.get(jwks_url).json()
+        public_keys = {key["kid"]: jwt.algorithms.RSAAlgorithm.from_jwk(key) for key in jwks["keys"]}
+        unverified_header = jwt.get_unverified_header(id_token)
+        key = public_keys[unverified_header["kid"]]
+        decoded = jwt.decode(
+            id_token,
+            key=key,
+            algorithms=["RS256"],
+            audience="test_client_canvas_123",
+            issuer="https://saltire.lti.app/platform"
+        )
+
+        print("✅ Token decodificado:")
+
+        session['user_id'] = decoded.get('sub')
+        session['course_id'] = decoded.get(CLAIM_CONTEXT, {}).get('id')
+
+        print(f"✅ Usuario autenticado: {session['user_id']}, Curso: {session['course_id']}")
+        #print(decoded.keys())
+
+
+        return redirect("/")
+    except jwt.PyJWTError as e:
+        print(f"❌ Error JWT: {str(e)}")
+        return f"❌ Error validando token: {str(e)}", 400
+    except Exception as e:
+        print(f"❌ Error general: {str(e)}")
+        return f"❌ Error interno: {str(e)}", 500
+

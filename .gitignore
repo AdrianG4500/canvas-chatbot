@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Claves y llaves privadas
+*.key
+*.pem
+
 # C extensions
 *.so
 
