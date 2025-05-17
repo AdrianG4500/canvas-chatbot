@@ -117,7 +117,10 @@ def launch():
 
         # Obtener claves públicas
         jwks = requests.get(jwks_url).json()
-        public_keys = {key["kid"]: jwt.algorithms.RSAAlgorithm.from_jwk(key) for key in jwks["keys"]}
+        public_keys = {
+            key["kid"]: jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+            for key in jwks["keys"]
+        }
         unverified_header = jwt.get_unverified_header(id_token)
         key = public_keys[unverified_header["kid"]]
          # Decodificar token
