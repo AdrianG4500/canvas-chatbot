@@ -45,39 +45,52 @@ def index():
                 cantidad = get_nro_consultas(user_id, course_id)
                 consultas_restantes = 10 - cantidad
                 try:
-                    pregunta = request.form["pregunta"]
-                    thread = openai.beta.threads.create()
-                    openai.beta.threads.messages.create(
-                        thread_id=thread.id,
-                        role="user",
-                        content=pregunta
-                    )
-                    run = openai.beta.threads.runs.create(
-                        thread_id=thread.id,
-                        assistant_id=ASSISTANT_ID
-                    )
-                    while run.status not in ["completed", "failed"]:
-                        time.sleep(1)
-                        run = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-                    messages = openai.beta.threads.messages.list(thread_id=thread.id)
-                    respuesta_bruta = messages.data[0].content[0].text.value
-                    texto_final, fuentes = limpiar_y_separar(respuesta_bruta)
+                    pregunta = request.form.get("pregunta", "").strip()
 
-                    respuesta_formateada = ""
-                    if texto_final:
-                        respuesta_formateada += "🎯 **Respuesta Detallada:**\n\n"
-                        parrafos = texto_final.split('\n')
-                        for p in parrafos:
-                            if p.strip():
-                                respuesta_formateada += f"{p}\n\n"
-                        respuesta_formateada += f"\n✅ Has realizado **{cantidad}** de **10** consultas este mes. Te quedan **{consultas_restantes}**."
-                        if fuentes:
-                            respuesta_formateada += "\n📚 **Fuentes utilizadas:**\n"
-                            for i, fuente in enumerate(fuentes, 1):
-                                respuesta_formateada += f"{i}. *{fuente}*\n"
+                    if not pregunta:
+                        respuesta_formateada = "⚠️ La pregunta no puede estar vacía."
                     else:
-                        respuesta_formateada = "❌ No se encontró información clara para responder."
+                        thread = openai.beta.threads.create()
+                        openai.beta.threads.messages.create(
+                            thread_id=thread.id,
+                            role="user",
+                            content=pregunta
+                        )
+                        run = openai.beta.threads.runs.create(
+                            thread_id=thread.id,
+                            assistant_id=ASSISTANT_ID
+                        )
+                        while run.status not in ["completed", "failed"]:
+                            time.sleep(1)
+                            run = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+                        messages = openai.beta.threads.messages.list(thread_id=thread.id)
+                        respuesta_bruta = messages.data[0].content[0].text.value
+                        texto_final, fuentes = limpiar_y_separar(respuesta_bruta)
 
+                        respuesta_formateada = ""
+                        if texto_final:
+                            respuesta_formateada += "🎯 **Respuesta Detallada:**\n\n"
+                            # Limpiar múltiples saltos de línea
+                            texto_final = re.sub(r'\n{2,}', '\n', texto_final)
+
+                            # Unir líneas con viñetas mal cortadas (por ejemplo "*\nContenido" -> "* Contenido")
+                            texto_final = re.sub(r'\*\s*\n\s*', '* ', texto_final)
+
+                            # Unir enumeraciones mal cortadas (por ejemplo "1.\nTexto" -> "1. Texto")
+                            texto_final = re.sub(r'(\d+)\.\s*\n\s*', r'\1. ', texto_final)
+
+                            # Volver a separar en párrafos más limpios
+                            parrafos = texto_final.split('\n')
+                            for p in parrafos:
+                                if p.strip():
+                                    respuesta_formateada += f"{p.strip()}\n"
+                            respuesta_formateada += f"\n✅ Has realizado **{cantidad}** de **10** consultas este mes. Te quedan **{consultas_restantes}**."
+                            if fuentes:
+                                respuesta_formateada += "\n📚 **Fuentes utilizadas:**\n"
+                                for i, fuente in enumerate(fuentes, 1):
+                                    respuesta_formateada += f"{i}. *{fuente}*\n"
+                        else:
+                            respuesta_formateada = "❌ No se encontró información clara para responder."
                 except Exception as e:
                     respuesta_formateada = f"⚠️ Error al obtener respuesta: {str(e)}"
 

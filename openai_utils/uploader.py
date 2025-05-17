@@ -11,7 +11,7 @@ client = OpenAI()
 
 # Solo aceptaremos archivos tipo documento
 EXTENSIONES_DOCUMENTO = {
-    "pdf", "doc", "docx", "xlsx", "csv", "txt", "md", "json", "r", ".xls"
+    "pdf", "doc", "docx", "xlsx", "csv", "txt", "md", "json", "r", "xls"
 }
 
 EXTENSIONES_DOCUMENTO_NC = {

@@ -9,6 +9,7 @@ import secrets
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from urllib.parse import urlencode
+from config import CANVAS_ISSUER, CANVAS_JWKS_URL, CANVAS_CLIENT_ID, CANVAS_DEPLOYMENT_ID
 
 
 lti_bp = Blueprint('lti', __name__, url_prefix="/lti")
@@ -108,27 +109,44 @@ def launch():
         return "Falta id_token", 400
 
     try:
-        jwks_url = "https://saltire.lti.app/platform/jwks/12d80322c307658029cc1db9923ec250"
+         # CONFIG DE PRODUCCIÓN DESDE CONFIG
+        jwks_url = CANVAS_JWKS_URL
+        client_id = CANVAS_CLIENT_ID
+        issuer = CANVAS_ISSUER
+        deployment_id_expected = CANVAS_DEPLOYMENT_ID
+
+        # Obtener claves públicas
         jwks = requests.get(jwks_url).json()
         public_keys = {key["kid"]: jwt.algorithms.RSAAlgorithm.from_jwk(key) for key in jwks["keys"]}
         unverified_header = jwt.get_unverified_header(id_token)
         key = public_keys[unverified_header["kid"]]
+         # Decodificar token
         decoded = jwt.decode(
             id_token,
             key=key,
             algorithms=["RS256"],
-            audience="test_client_canvas_123",
-            issuer="https://saltire.lti.app/platform"
+            audience=client_id,
+            issuer=issuer
         )
 
-        print("✅ Token decodificado:")
+        if decoded.get("https://purl.imsglobal.org/spec/lti/claim/deployment_id") != deployment_id_expected:
+            print("❌ Deployment ID inválido")
+            return "Deployment ID no válido", 400
 
+        # Validación de nonce
+        expected_nonce = session.get("nonce")
+        received_nonce = decoded.get("nonce")
+
+        if received_nonce != expected_nonce:
+            print(f"❌ Nonce inválido: esperado {expected_nonce} - recibido {received_nonce}")
+            return "Nonce inválido", 400
+
+        print("✅ Token decodificado:")
         session['user_id'] = decoded.get('sub')
         session['course_id'] = decoded.get(CLAIM_CONTEXT, {}).get('id')
 
         print(f"✅ Usuario autenticado: {session['user_id']}, Curso: {session['course_id']}")
         #print(decoded.keys())
-
 
         return redirect("/")
     except jwt.PyJWTError as e:

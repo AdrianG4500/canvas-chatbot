@@ -18,6 +18,14 @@ COURSE_ID = '91340000000002198'
 ASSISTANT_ID = "asst_ryh6oDCgELAkuGctOQSul9ar"
 VECTOR_STORE_ID = "vs_67efafcb3f988191a08a2c7e07ee73e7"
 
+# lTI CONFIG 
+CANVAS_ISSUER="https://ucb.instructure.com"
+CANVAS_JWKS_URL="https://ucb.instructure.com/api/lti/security/jwks"
+# Actualizar esto en base a la LTI KEY
+CANVAS_CLIENT_ID=os.getenv("CANVAS_CLIENT_ID")
+CANVAS_DEPLOYMENT_ID=os.getenv("CANVAS_DEPLOYMENT_ID")
+
+
 # LTI
 LTI_CLIENT_IDS = ["test_client_canvas_123"]
 
