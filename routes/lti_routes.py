@@ -4,6 +4,7 @@ from flask import Blueprint, request, render_template, session, current_app, red
 import jwt
 import requests
 import json
+import logging
 from datetime import datetime, timedelta
 import secrets
 from cryptography.hazmat.primitives import serialization
@@ -28,7 +29,7 @@ def load_public_key():
             )
         return public_key
     except Exception as e:
-        print(f"❌ Error cargando clave pública: {e}")
+        logging.info(f"❌ Error cargando clave pública: {e}")
         return None
 
 
@@ -39,16 +40,17 @@ def jwks():
     return jwks_data, 200, {'Content-Type': 'application/json'}
 
 # LTI Login (GET)
-@lti_bp.route("/login", methods=["GET"])
+@lti_bp.route("/login", methods=["GET", "POST"])
 def login():
+    logging.info(f"📥 Método recibido en /lti/login: {request.method}")
     # Generar state y nonce aleatorios
     state = secrets.token_urlsafe(16)
     nonce = secrets.token_urlsafe(16)
     session['state'] = state
     session['nonce'] = nonce
 
-    print("📩 Datos recibidos en /lti/login:")
-    print(dict(request.args))
+    logging.info("📩 Datos recibidos en /lti/login:")
+    logging.info(dict(request.args))
 
     # Asegura los parámetros obligatorios
     iss = request.args.get("iss")
@@ -82,18 +84,18 @@ def login():
 
     auth_url = base_url + urlencode(params)
 
-    print(auth_url)
+    logging.info(auth_url)
     return redirect(auth_url)
 
 @lti_bp.route("/launch", methods=["POST"])  
 def launch():
-    print("✅ Launch iniciado")
+    logging.info("✅ Launch iniciado")
 
     received_state = request.form.get('state')
     expected_state = session.get('state')
 
     if not received_state or received_state != expected_state:
-        print(f"❌ State no coincide: esperado {expected_state} - recibido {received_state}")
+        logging.info(f"❌ State no coincide: esperado {expected_state} - recibido {received_state}")
         return "Estado inválido", 400
 
 
@@ -105,7 +107,7 @@ def launch():
     id_token = request.form.get('id_token')
 
     if not id_token:
-        print("❌ No se recibió id_token")
+        logging.info("❌ No se recibió id_token")
         return "Falta id_token", 400
 
     try:
@@ -122,6 +124,12 @@ def launch():
             for key in jwks["keys"]
         }
         unverified_header = jwt.get_unverified_header(id_token)
+
+        #print(f"🔐 Encabezado sin verificar: {unverified_header}")
+        #print(f"📥 JWKS obtenida desde {jwks_url}: {jwks}")
+        #print(f"📌 Claves disponibles (kids): {list(public_keys.keys())}")
+        #print(f"🔍 Se buscará kid: {unverified_header.get('kid')}")
+
         key = public_keys[unverified_header["kid"]]
          # Decodificar token
         decoded = jwt.decode(
@@ -132,8 +140,10 @@ def launch():
             issuer=issuer
         )
 
+        
+
         if decoded.get("https://purl.imsglobal.org/spec/lti/claim/deployment_id") != deployment_id_expected:
-            print("❌ Deployment ID inválido")
+            logging.info("❌ Deployment ID inválido")
             return "Deployment ID no válido", 400
 
         # Validación de nonce
@@ -141,21 +151,21 @@ def launch():
         received_nonce = decoded.get("nonce")
 
         if received_nonce != expected_nonce:
-            print(f"❌ Nonce inválido: esperado {expected_nonce} - recibido {received_nonce}")
+            logging.info(f"❌ Nonce inválido: esperado {expected_nonce} - recibido {received_nonce}")
             return "Nonce inválido", 400
 
-        print("✅ Token decodificado:")
+        logging.info("✅ Token decodificado:")
         session['user_id'] = decoded.get('sub')
         session['course_id'] = decoded.get(CLAIM_CONTEXT, {}).get('id')
 
-        print(f"✅ Usuario autenticado: {session['user_id']}, Curso: {session['course_id']}")
+        logging.info(f"✅ Usuario autenticado: {session['user_id']}, Curso: {session['course_id']}")
         #print(decoded.keys())
 
         return redirect("/")
     except jwt.PyJWTError as e:
-        print(f"❌ Error JWT: {str(e)}")
+        logging.info(f"❌ Error JWT: {str(e)}")
         return f"❌ Error validando token: {str(e)}", 400
     except Exception as e:
-        print(f"❌ Error general: {str(e)}")
+        logging.info(f"❌ Error general: {str(e)}")
         return f"❌ Error interno: {str(e)}", 500
 

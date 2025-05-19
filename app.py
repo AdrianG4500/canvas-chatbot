@@ -6,11 +6,14 @@ from routes.api_routes import api_bp
 import jwt
 import secrets
 import os
+import logging
 from datetime import datetime, timedelta
 from config import PORT, LTI_CLIENT_IDS, VECTOR_STORE_ID, ASSISTANT_ID, SECRET_KEY
 
 # Crear la aplicación Flask
 app = Flask(__name__)
+
+logging.basicConfig(level=logging.INFO)
 
 app.secret_key = SECRET_KEY
 
