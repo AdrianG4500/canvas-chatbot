@@ -44,6 +44,12 @@ def jwks():
 def login():
     logging.info(f"📥 Método recibido en /lti/login: {request.method}")
     # Generar state y nonce aleatorios
+    if request.method == "POST":
+        # Canvas a veces envía parámetros como form-data en POST
+        data = request.form
+    else:
+        data = request.args
+
     state = secrets.token_urlsafe(16)
     nonce = secrets.token_urlsafe(16)
     session['state'] = state
@@ -53,12 +59,12 @@ def login():
     logging.info(dict(request.args))
 
     # Asegura los parámetros obligatorios
-    iss = request.args.get("iss")
-    login_hint = request.args.get("login_hint")
-    target_link_uri = request.args.get("target_link_uri")
-    lti_message_hint = request.args.get("lti_message_hint", "")
-    client_id = request.args.get("client_id")
-    lti_deployment_id = request.args.get("lti_deployment_id", "")
+    iss = data.get("iss")
+    login_hint = data.get("login_hint")
+    target_link_uri = data.get("target_link_uri")
+    lti_message_hint = data.get("lti_message_hint", "")
+    client_id = data.get("client_id")
+    lti_deployment_id = data.get("lti_deployment_id", "")
 
     if not all([login_hint, target_link_uri, client_id]):
         return "Faltan parámetros", 400
