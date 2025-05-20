@@ -39,7 +39,7 @@ def jwks():
         jwks_data = json.load(f)
     return jwks_data, 200, {'Content-Type': 'application/json'}
 
-# LTI Login (GET)
+# LTI Login (GET,POST)
 @lti_bp.route("/login", methods=["GET", "POST"])
 def login():
     logging.info(f"📥 Método recibido en /lti/login: {request.method}")
@@ -69,7 +69,9 @@ def login():
     if not all([login_hint, target_link_uri, client_id]):
         return "Faltan parámetros", 400
     
-    base_url = iss.rstrip("/") + "/auth?"
+    #base_url = iss.rstrip("/") + "/auth?"
+    base_url = "https://ucb.instructure.com/auth?"
+    
     # ✅ Redirigimos a la autenticación real de la plataforma
     params = {
         "scope": "openid",

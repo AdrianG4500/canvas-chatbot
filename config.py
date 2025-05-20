@@ -26,7 +26,7 @@ CANVAS_CLIENT_ID=os.getenv("CANVAS_CLIENT_ID")
 CANVAS_DEPLOYMENT_ID=os.getenv("CANVAS_DEPLOYMENT_ID")
 
 # LTI
-LTI_CLIENT_IDS = ["test_client_canvas_123"]
+LTI_CLIENT_IDS =os.getenv("CANVAS_CLIENT_ID")
 
 # Ruta a la base de datos
 DB_PATH = os.getenv("DB_PATH", "archivos.db")
