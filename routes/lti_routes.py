@@ -70,7 +70,7 @@ def login():
         return "Faltan parámetros", 400
     
     #base_url = iss.rstrip("/") + "/auth?"
-    base_url = "https://ucb.instructure.com/auth?"
+    base_url = "https://sso.canvaslms.com/api/lti/authorize_redirect?"
     
     # ✅ Redirigimos a la autenticación real de la plataforma
     params = {

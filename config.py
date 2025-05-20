@@ -19,11 +19,14 @@ ASSISTANT_ID = "asst_ryh6oDCgELAkuGctOQSul9ar"
 VECTOR_STORE_ID = "vs_67efafcb3f988191a08a2c7e07ee73e7"
 
 # lTI CONFIG 
-CANVAS_ISSUER="https://ucb.instructure.com"
-CANVAS_JWKS_URL="https://ucb.instructure.com/api/lti/security/jwks"
+CANVAS_ISSUER="https://canvas.instructure.com"
+CANVAS_JWKS_URL="https://sso.canvaslms.com/api/lti/security/jwks"
 # Actualizar esto en base a la LTI KEY
 CANVAS_CLIENT_ID=os.getenv("CANVAS_CLIENT_ID")
 CANVAS_DEPLOYMENT_ID=os.getenv("CANVAS_DEPLOYMENT_ID")
+# OTHERS
+AUTH_LOGIN_URL = "https://sso.canvaslms.com/api/lti/authorize_redirect"
+TOKEN_URL = "https://sso.canvaslms.com/login/oauth2/token"
 
 # LTI
 LTI_CLIENT_IDS =os.getenv("CANVAS_CLIENT_ID")

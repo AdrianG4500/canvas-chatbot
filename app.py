@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 app.secret_key = SECRET_KEY
 
+
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True,  # Solo funciona en HTTPS, Render usa HTTPS
