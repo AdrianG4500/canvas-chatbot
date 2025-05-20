@@ -56,7 +56,7 @@ def login():
     session['nonce'] = nonce
 
     logging.info("📩 Datos recibidos en /lti/login:")
-    logging.info(dict(request.args))
+    logging.info(dict(data))
 
     # Asegura los parámetros obligatorios
     iss = data.get("iss")
@@ -93,8 +93,14 @@ def login():
     logging.info(auth_url)
     return redirect(auth_url)
 
-@lti_bp.route("/launch", methods=["POST"])  
+@lti_bp.route("/launch", methods=["GET","POST"])  
 def launch():
+    logging.info("📩 Recibido POST en /lti/launch")
+    logging.info(request.form)
+    if request.method == "GET":
+        return "❌ Error: Canvas debe enviar POST, no GET", 405
+    logging.info("✅ POST recibido")
+
     logging.info("✅ Launch iniciado")
 
     received_state = request.form.get('state')
