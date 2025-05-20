@@ -34,6 +34,9 @@ LTI_CLIENT_IDS =os.getenv("CANVAS_CLIENT_ID")
 # Ruta a la base de datos
 DB_PATH = os.getenv("DB_PATH", "archivos.db")
 
+# Cantidad de consultas
+CONS_LIMIT = 20
+
 # Ruta temporal para archivos
 TEMP_DIR = "/tmp"
 

@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from config import DB_PATH
+from config import DB_PATH, CONS_LIMIT
 from datetime import datetime
 
 def init_db():
@@ -61,7 +61,7 @@ def registrar_consulta(user_id, course_id):
     ).fetchone()
 
     if consulta:
-        if consulta['total'] >= 10:
+        if consulta['total'] >= CONS_LIMIT:
             conn.close()
             return False  # límite alcanzado
         conn.execute(

@@ -1,6 +1,6 @@
 # routes/main_routes.py
 from flask import Blueprint, render_template, request, session, jsonify
-from config import ASSISTANT_ID, VECTOR_STORE_ID
+from config import ASSISTANT_ID, VECTOR_STORE_ID, CONS_LIMIT
 from canvas.downloader import get_all_course_files, download_file
 from openai_utils.uploader import subir_y_asociar_archivo, listar_archivos_vector_store
 from db import registrar_consulta
@@ -40,10 +40,10 @@ def index():
             respuesta_formateada = "⚠️ No se pudo identificar al usuario o curso."
         else:
             if registrar_consulta(user_id, course_id) is False:
-                respuesta_formateada = "🚫 Has alcanzado el límite mensual de 10 consultas. Vuelve el próximo mes."
+                respuesta_formateada = "🚫 Has alcanzado el límite mensual de consultas. Vuelve el próximo mes."
             else:
                 cantidad = get_nro_consultas(user_id, course_id)
-                consultas_restantes = 10 - cantidad
+                consultas_restantes = CONS_LIMIT - cantidad
                 try:
                     pregunta = request.form.get("pregunta", "").strip()
 
