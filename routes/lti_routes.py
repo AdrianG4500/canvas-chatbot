@@ -68,8 +68,6 @@ def login():
 
     if not all([login_hint, target_link_uri, client_id]):
         return "Faltan parámetros", 400
-
-    
     
     base_url = iss.rstrip("/") + "/auth?"
     # ✅ Redirigimos a la autenticación real de la plataforma
@@ -95,11 +93,10 @@ def login():
 
 @lti_bp.route("/launch", methods=["GET","POST"])  
 def launch():
-    logging.info("📩 Recibido POST en /lti/launch")
-    logging.info(request.form)
     if request.method == "GET":
         return "❌ Error: Canvas debe enviar POST, no GET", 405
     logging.info("✅ POST recibido")
+
 
     logging.info("✅ Launch iniciado")
 
