@@ -10,13 +10,13 @@ from datetime import datetime, timedelta
 from config import PORT, LTI_CLIENT_IDS, VECTOR_STORE_ID, ASSISTANT_ID, SECRET_KEY
 import logging
 
+
 # Crear la aplicación Flask
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
 app.secret_key = SECRET_KEY
-
 
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",

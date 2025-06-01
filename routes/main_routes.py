@@ -69,22 +69,31 @@ def index():
 
                         respuesta_formateada = ""
                         if texto_final:
-                            respuesta_formateada += "🎯 **Respuesta Detallada:**\n\n"
-                            # Limpiar múltiples saltos de línea
+                            # Obtener nombre y curso desde sesión
+                            user_name = session.get('user_full_name', 'Estudiante')
+                            course_name = session.get('course_name', 'este curso')
+                            
+                            # Saludo personalizado
+                            saludo = f"Hola {user_name}, de {course_name}. Esta es tu respuesta:\n\n"
+                            
+                            # Limpiar y formatear el resto de la respuesta
                             texto_final = re.sub(r'\n{2,}', '\n', texto_final)
-
-                            # Unir líneas con viñetas mal cortadas (por ejemplo "*\nContenido" -> "* Contenido")
                             texto_final = re.sub(r'\*\s*\n\s*', '* ', texto_final)
-
-                            # Unir enumeraciones mal cortadas (por ejemplo "1.\nTexto" -> "1. Texto")
                             texto_final = re.sub(r'(\d+)\.\s*\n\s*', r'\1. ', texto_final)
 
-                            # Volver a separar en párrafos más limpios
                             parrafos = texto_final.split('\n')
+                            cuerpo_respuesta = ""
                             for p in parrafos:
                                 if p.strip():
-                                    respuesta_formateada += f"{p.strip()}\n"
+                                    cuerpo_respuesta += f"{p.strip()}\n"
+
+                            # Construir respuesta completa
+                            respuesta_formateada = saludo + "🎯 **Respuesta Detallada:**\n\n" + cuerpo_respuesta
+
+                            # Agregar info de consultas restantes
                             respuesta_formateada += f"\n✅ Has realizado **{cantidad}** de **10** consultas este mes. Te quedan **{consultas_restantes}**."
+                            
+                            # Agregar fuentes si las hay
                             if fuentes:
                                 respuesta_formateada += "\n📚 **Fuentes utilizadas:**\n"
                                 for i, fuente in enumerate(fuentes, 1):

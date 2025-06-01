@@ -32,7 +32,6 @@ def load_public_key():
         logging.info(f"❌ Error cargando clave pública: {e}")
         return None
 
-
 @lti_bp.route('/.well-known/jwks.json')
 def jwks():
     with open('.well-known/jwks.json', 'r') as f:
@@ -165,11 +164,24 @@ def launch():
             logging.info(f"❌ Nonce inválido: esperado {expected_nonce} - recibido {received_nonce}")
             return "Nonce inválido", 400
 
-        logging.info("✅ Token decodificado:")
-        session['user_id'] = decoded.get('sub')
-        session['course_id'] = decoded.get(CLAIM_CONTEXT, {}).get('id')
+        # 🧾 Extraer nombre del usuario
+        user_full_name = decoded.get("name") or f"{decoded.get('given_name', '')} {decoded.get('family_name', '')}".strip()
+        if not user_full_name:
+            user_full_name = "Estudiante sin nombre"
 
-        logging.info(f"✅ Usuario autenticado: {session['user_id']}, Curso: {session['course_id']}")
+        # 📚 Extraer nombre del curso
+        context = decoded.get(CLAIM_CONTEXT, {})
+        course_id = context.get("id")
+        course_name = context.get("title", "Curso desconocido")
+
+        logging.info("✅ Token decodificado:")
+
+        session['user_id'] = decoded.get('sub')
+        session['course_id'] = course_id
+        session['course_name'] = course_name
+        session['user_full_name'] = user_full_name
+
+        logging.info(f"✅ Usuario autenticado: {session['user_full_name']} ({session['user_id']}), Curso: {session['course_name']} ({session['course_id']})")
         #print(decoded.keys())
 
         return redirect("/")
