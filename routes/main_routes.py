@@ -86,7 +86,7 @@ def index():
                 except Exception as e:
                     respuesta_formateada = f"⚠️ Error al obtener respuesta: {str(e)}"
     respuesta_html = markdown(respuesta_formateada) if respuesta_formateada else None
-    return render_template("index.html", respuesta=respuesta_html)
+    return render_template("index.html", respuesta_index=respuesta_html)
 
 #Descargar y subir archivos
 @main_bp.route("/descargar", methods=["GET"])
