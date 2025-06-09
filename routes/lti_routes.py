@@ -182,13 +182,12 @@ def launch():
 
         # 📚 Extraer nombre del curso
         context = decoded.get(CLAIM_CONTEXT, {})
-        course_id = context.get("id")
         course_name = context.get("title", "Curso desconocido")
 
         logging.info("✅ Token decodificado:")
 
         session['user_id'] = decoded.get('sub')
-        session['course_id'] = course_id
+        session['course_id'] = curso_data["course_id"]
         session['course_name'] = course_name
         session['user_full_name'] = user_full_name
 
