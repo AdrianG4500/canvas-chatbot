@@ -34,15 +34,16 @@ def index():
         respuesta_formateada = "⚠️ Esta aplicación debe usarse desde Canvas."
         return render_template("index.html", respuesta=markdown(respuesta_formateada))
     
-    try:
-        curso_data = obtener_datos_curso(course_id)
-    except Exception as e:
-        print(f"❌ Error obteniendo datos del curso: {e}")
-        return "Curso no encontrado. Verifica que tengas permisos.", 403
+    # Obtener datos del curso actual
+    curso_data = obtener_datos_curso(course_id)
 
-    user_id = session.get("user_id")
+    if not curso_data:
+        respuesta_formateada = f"⚠️ Este curso ({course_id}) no está configurado aún."
+        return render_template("index.html", respuesta=markdown(respuesta_formateada))
+    
+    # Obtenemos Datos
     ASSISTANT_ID = curso_data["assistant_id"]
-    VECTOR_STORE_ID = curso_data["vector_store_id"]
+    user_id = session.get("user_id")
 
     # Verificar si el usuario y curso están definidos
     if request.method == "POST":

@@ -127,12 +127,16 @@ def get_nro_consultas(user_id, course_id):
 
 def obtener_datos_curso(course_id):
     conn = get_db_connection()
-    row = conn.execute("SELECT * FROM cursos WHERE course_id = ?", (course_id,)).fetchone()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM cursos WHERE course_id = ?", (course_id,))
+    row = cursor.fetchone()
     conn.close()
+
     if row:
         return dict(row)
     else:
-        print(f"⚠️ Curso no registrado: {course_id}")
+        print(f"⚠️ Curso {course_id} no encontrado.")
         return None
     
 def registrar_consulta_completa(user_id, course_id, user_full_name, course_name, pregunta, respuesta):
