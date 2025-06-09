@@ -4,7 +4,10 @@ import os
 import shutil
 import openai
 from openai import OpenAI
-from config import OPENAI_API_KEY, VECTOR_STORE_ID, TEMP_DIR
+from config import OPENAI_API_KEY, TEMP_DIR
+from models.db import obtener_datos_curso
+from flask import session, jsonify
+import re
 
 openai.api_key = OPENAI_API_KEY
 client = OpenAI()
@@ -40,7 +43,8 @@ def preparar_archivo_para_openai(path):
     except Exception as e:
         raise Exception(f"No se pudo convertir {path} a .txt: {e}")
 
-def subir_y_asociar_archivo(path):
+def subir_y_asociar_archivo(path, vector_store_id):
+
     if not es_documento_permitido(path):
         raise Exception(f"Archivo ignorado por tipo no permitido: {os.path.basename(path)}")
 
@@ -62,7 +66,7 @@ def subir_y_asociar_archivo(path):
 
         # Asociar al vector store
         association = openai.vector_stores.files.create(
-            vector_store_id=VECTOR_STORE_ID,
+            vector_store_id=vector_store_id,
             file_id=file_id
         )
         print(f"🔗 Asociado al vector store: {association.id}")
@@ -77,10 +81,10 @@ def subir_y_asociar_archivo(path):
         print(f"❌ No se subio el archivo: {os.path.basename(path)} → {str(e)}")
         raise
 
-def listar_archivos_vector_store():
-    """Lista los archivos asociados al vector store actual"""
+def listar_archivos_vector_store(vector_store_id):
+    """Lista los archivos asociados al vector store dado"""
     try:
-        vs_files = client.vector_stores.files.list(vector_store_id=VECTOR_STORE_ID).data
+        vs_files = client.vector_stores.files.list(vector_store_id=vector_store_id).data
         archivos = []
         for f in vs_files:
             file_info = client.files.retrieve(f.id)
@@ -91,7 +95,7 @@ def listar_archivos_vector_store():
             })
         return archivos
     except Exception as e:
-        print(f"❌ Error al listar archivos del vector store: {e}")
+        print(f"❌ Error al listar archivos del vector store {vector_store_id}: {e}")
         return []
     
 def extraer_fuentes(texto):

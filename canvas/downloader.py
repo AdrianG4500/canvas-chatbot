@@ -2,11 +2,17 @@
 
 import os
 import requests
-from config import CANVAS_TOKEN, CANVAS_BASE_URL, COURSE_ID, TEMP_DIR
+from config import CANVAS_TOKEN, CANVAS_BASE_URL, TEMP_DIR
+from flask import session, jsonify
+from models.db import obtener_datos_curso
 
-def get_all_course_files():
+def get_all_course_files(course_id):
+
+    if not course_id:
+        return jsonify({"error": "❌ Curso no encontrado"}), 400
+
     headers = { "Authorization": f"Bearer {CANVAS_TOKEN}" }
-    url = f"{CANVAS_BASE_URL}/courses/{COURSE_ID}/files"
+    url = f"{CANVAS_BASE_URL}/courses/{course_id}/files"
     params = {'per_page': 100}
     todos_los_archivos = []
 

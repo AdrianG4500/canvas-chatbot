@@ -1,0 +1,183 @@
+/* === Variables globales === */
+:root {
+  --default-font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --primary-color: #FF9D00;
+  --primary-dark: #E67E22;
+  --secondary-color: #f1f1f1;
+  --text-color: #333;
+  --border-radius: 8px;
+  --box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* === Estilo general === */
+body {
+  font-family: var(--default-font-family);
+  background-color: #f2f2f2;
+  color: var(--text-color);
+  padding: 20px;
+  margin: 0;
+}
+
+/* === Contenedor principal === */
+.container {
+  max-width: 1000px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* === Encabezados === */
+h1, h2 {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+h2 {
+  font-size: 1.5em;
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+/* === Formulario de preguntas === */
+input[type="text"] {
+  width: calc(100% - 120px);
+  padding: 12px;
+  margin-right: 10px;
+  border-radius: var(--border-radius);
+  border: 1px solid #ccc;
+  font-size: 1em;
+  outline: none;
+}
+
+button {
+  padding: 12px 20px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  float: right;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: var(--primary-dark);
+}
+
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* === Respuesta del asistente === */
+.respuesta {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  line-height: 1.6;
+  font-size: 16px;
+  margin-top: 20px;
+  white-space: pre-line;
+  border-left: 4px solid var(--primary-color);
+}
+
+.respuesta ul,
+.respuesta ol {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.respuesta .sources {
+  margin-top: 20px;
+  font-size: 0.9em;
+  background: var(--secondary-color);
+  padding: 10px;
+  border-left: 4px solid #ccc;
+  border-radius: 4px;
+}
+
+/* === Mensajes importantes === */
+.mensaje-importante {
+  color: #E84C3D; /* Rojo Canvas */
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+/* === Tablas generales === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background-color: white;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #fafafa;
+  font-weight: bold;
+}
+
+tr:nth-child(even) {
+  background-color: #f7f7f7;
+}
+
+/* === Selector de curso === */
+.filtro-curso {
+  margin-bottom: 20px;
+}
+
+.filtro-curso label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.filtro-curso select {
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: var(--border-radius);
+  border: 1px solid #ccc;
+  min-width: 300px;
+  margin-bottom: 10px;
+}
+
+/* === Botones secundarios (opcional) === */
+.btn-secondary {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #2980b9;
+}
+
+/* === Limpiar floats === */
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* === Panel admin – Ajustes adicionales === */
+.admin-section {
+  margin-top: 30px;
+}
+
+.admin-section h2 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}

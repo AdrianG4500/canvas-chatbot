@@ -1,11 +1,20 @@
 # routes/main_routes.py
-from flask import Blueprint, render_template, request, session, jsonify
-from config import ASSISTANT_ID, VECTOR_STORE_ID, CONS_LIMIT
+from flask import Blueprint, render_template, request, session, jsonify, redirect, logging
+from config import CONS_LIMIT
 from canvas.downloader import get_all_course_files, download_file
 from openai_utils.uploader import subir_y_asociar_archivo, listar_archivos_vector_store
-from db import registrar_consulta
-from db import get_db_connection, registrar_archivo, get_nro_consultas
+#models
+from models.db import registrar_consulta
+from models.db import get_db_connection, registrar_archivo, get_nro_consultas
+from models.db import obtener_datos_curso
+from models.db import registrar_consulta_completa
+#utils
+from utils.helpers import limpiar_respuesta_openai, limpiar_y_separar, extraer_fuentes
+from utils.messages import generar_respuesta_formateada
 from markdown import markdown
+#services
+from services.consulta_service import obtener_respuesta_openai
+#import others
 import openai
 import time
 import re
@@ -13,28 +22,23 @@ import os
 
 main_bp = Blueprint('main', __name__)
 
-def limpiar_respuesta_openai(texto):
-    texto_limpio = re.sub(r"【\d+:\d+†(.*?)】", "", texto)
-    texto_limpio = texto_limpio.replace("1.", "🔹").replace("2.", "🔹").replace("3.", "🔹")
-    return texto_limpio.strip()
 
-def limpiar_y_separar(texto):
-    fuentes = extraer_fuentes(texto)
-    texto_limpio = re.sub(r"【\d+:\d+†.*?】", "", texto)
-    return texto_limpio.strip(), fuentes
-
-def extraer_fuentes(texto):
-    patron = r"【\d+:\d+†(.*?)】"
-    coincidencias = re.findall(patron, texto)
-    return list(set(coincidencias))
-
-
-
+#Main Page
 @main_bp.route("/", methods=["GET", "POST"])
 def index():
     respuesta_formateada = None
-    user_id = session.get("user_id")
+    # Obtener course_id y user_id de la sesión
     course_id = session.get("course_id")
+    user_id = session.get("user_id")
+    curso_data = obtener_datos_curso(course_id)
+
+    if not curso_data:
+        return jsonify({"error": "❌ Curso no configurado"}), 400
+
+    ASSISTANT_ID = curso_data["assistant_id"]
+    VECTOR_STORE_ID = curso_data["vector_store_id"]
+
+    # Verificar si el usuario y curso están definidos
     if request.method == "POST":
         if not user_id or not course_id:
             respuesta_formateada = "⚠️ No se pudo identificar al usuario o curso."
@@ -45,159 +49,206 @@ def index():
                 cantidad = get_nro_consultas(user_id, course_id)
                 consultas_restantes = CONS_LIMIT - cantidad
                 try:
+                    # Obtener pregunta del formulario
                     pregunta = request.form.get("pregunta", "").strip()
 
                     if not pregunta:
                         respuesta_formateada = "⚠️ La pregunta no puede estar vacía."
                     else:
-                        thread = openai.beta.threads.create()
-                        openai.beta.threads.messages.create(
-                            thread_id=thread.id,
-                            role="user",
-                            content=pregunta
-                        )
-                        run = openai.beta.threads.runs.create(
-                            thread_id=thread.id,
-                            assistant_id=ASSISTANT_ID
-                        )
-                        while run.status not in ["completed", "failed"]:
-                            time.sleep(1)
-                            run = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-                        messages = openai.beta.threads.messages.list(thread_id=thread.id)
-                        respuesta_bruta = messages.data[0].content[0].text.value
-                        texto_final, fuentes = limpiar_y_separar(respuesta_bruta)
-
+                        # Obtener respuesta de OpenAI
+                        texto_final, fuentes = obtener_respuesta_openai(pregunta, ASSISTANT_ID)
                         respuesta_formateada = ""
                         if texto_final:
                             # Obtener nombre y curso desde sesión
                             user_name = session.get('user_full_name', 'Estudiante')
                             course_name = session.get('course_name', 'este curso')
-                            
-                            # Saludo personalizado
-                            saludo = f"Hola {user_name}, de {course_name}. Esta es tu respuesta:\n\n"
-                            
-                            # Limpiar y formatear el resto de la respuesta
-                            texto_final = re.sub(r'\n{2,}', '\n', texto_final)
-                            texto_final = re.sub(r'\*\s*\n\s*', '* ', texto_final)
-                            texto_final = re.sub(r'(\d+)\.\s*\n\s*', r'\1. ', texto_final)
-
-                            parrafos = texto_final.split('\n')
-                            cuerpo_respuesta = ""
-                            for p in parrafos:
-                                if p.strip():
-                                    cuerpo_respuesta += f"{p.strip()}\n"
-
-                            # Construir respuesta completa
-                            respuesta_formateada = saludo + "🎯 **Respuesta Detallada:**\n\n" + cuerpo_respuesta
-
-                            # Agregar info de consultas restantes
-                            respuesta_formateada += f"\n✅ Has realizado **{cantidad}** de **10** consultas este mes. Te quedan **{consultas_restantes}**."
-                            
-                            # Agregar fuentes si las hay
-                            if fuentes:
-                                respuesta_formateada += "\n📚 **Fuentes utilizadas:**\n"
-                                for i, fuente in enumerate(fuentes, 1):
-                                    respuesta_formateada += f"{i}. *{fuente}*\n"
+                            respuesta_formateada = generar_respuesta_formateada(
+                                user_name, course_name, cantidad, consultas_restantes, texto_final, fuentes
+                            )
+                            # Registrar en historial
+                            registrar_consulta_completa(
+                                user_id=user_id,
+                                course_id=course_id,
+                                user_full_name=user_name,
+                                course_name=course_name,
+                                pregunta=pregunta,
+                                respuesta=texto_final
+                            )
                         else:
                             respuesta_formateada = "❌ No se encontró información clara para responder."
                 except Exception as e:
                     respuesta_formateada = f"⚠️ Error al obtener respuesta: {str(e)}"
-
     respuesta_html = markdown(respuesta_formateada) if respuesta_formateada else None
     return render_template("index.html", respuesta=respuesta_html)
 
+#Descargar y subir archivos
 @main_bp.route("/descargar", methods=["GET"])
 def descargar_y_subir():
     try:
-        archivos_canvas = get_all_course_files()
         conn = get_db_connection()
         cursor = conn.cursor()
-        subidos = []
 
-        cursor.execute("SELECT canvas_file_id FROM archivos_procesados")
-        registros_db = cursor.fetchall()
-        ids_en_db = set(row[0] for row in registros_db)
-        ids_en_canvas = set(str(archivo["id"]) for archivo in archivos_canvas)
+        # Obtener todos los cursos registrados
+        cursor.execute("SELECT course_id, vector_store_id FROM cursos")
+        cursos_registrados = cursor.fetchall()
 
-        archivos_eliminados = ids_en_db - ids_en_canvas
-        if archivos_eliminados:
-            print(f"🗑️ Archivos eliminados en Canvas detectados: {len(archivos_eliminados)}")
+        if not cursos_registrados:
+            return jsonify({"error": "❌ No hay cursos registrados."}), 400
 
-        for canvas_file_id in archivos_eliminados:
+        resultados_totales = {}
+
+        for curso_row in cursos_registrados:
+            course_id = curso_row[0]
+            VECTOR_STORE_ID = curso_row[1]
+
+            print(f"\n🔄 Procesando curso: {course_id}")
+
+            # Obtener archivos de Canvas para este curso
             try:
-                cursor.execute("SELECT file_id_openai FROM archivos_procesados WHERE canvas_file_id = ?", (canvas_file_id,))
-                row = cursor.fetchone()
-                file_id_openai = row[0] if row else None
-
-                if file_id_openai:
-                    openai.vector_stores.files.delete(vector_store_id=VECTOR_STORE_ID, file_id=file_id_openai)
-                    openai.files.delete(file_id_openai)
-
-                cursor.execute("DELETE FROM archivos_procesados WHERE canvas_file_id = ?", (canvas_file_id,))
-                conn.commit()
-                print(f"✅ Archivo eliminado (Canvas): {canvas_file_id}")
-
+                archivos_canvas = get_all_course_files(course_id)
             except Exception as e:
-                print(f"❌ Error al eliminar archivo {canvas_file_id}: {str(e)}")
+                print(f"❌ Error obteniendo archivos de Canvas para {course_id}: {str(e)}")
+                continue
 
-        for archivo in archivos_canvas:
-            canvas_file_id = str(archivo["id"])
-            filename = archivo["filename"]
-            updated_at = archivo.get("updated_at", "")
+            ids_en_canvas = set(str(archivo["id"]) for archivo in archivos_canvas)
 
-            cursor.execute('SELECT * FROM archivos_procesados WHERE canvas_file_id = ?', (canvas_file_id,))
-            registro = cursor.fetchone()
+            # Archivos en DB para este curso
+            cursor.execute("SELECT canvas_file_id FROM archivos_procesados WHERE course_id = ?", (course_id,))
+            registros_db = cursor.fetchall()
+            ids_en_db = set(row[0] for row in registros_db)
 
-            if registro:
-                if registro[2] == updated_at:
-                    print(f"🔁 Archivo sin cambios: {filename}")
+            archivos_eliminados = ids_en_db - ids_en_canvas
+            if archivos_eliminados:
+                print(f"🗑️ Eliminando {len(archivos_eliminados)} archivos eliminados en Canvas")
+
+            for canvas_file_id in archivos_eliminados:
+                try:
+                    cursor.execute(
+                        "SELECT file_id_openai FROM archivos_procesados WHERE canvas_file_id = ? AND course_id = ?",
+                        (canvas_file_id, course_id)
+                    )
+                    row = cursor.fetchone()
+                    file_id_openai = row[0] if row else None
+
+                    if file_id_openai:
+                        openai.vector_stores.files.delete(vector_store_id=VECTOR_STORE_ID, file_id=file_id_openai)
+                        openai.files.delete(file_id_openai)
+
+                    cursor.execute(
+                        "DELETE FROM archivos_procesados WHERE canvas_file_id = ? AND course_id = ?",
+                        (canvas_file_id, course_id)
+                    )
+                    conn.commit()
+                    print(f"✅ Archivo eliminado: {canvas_file_id}")
+                except Exception as e:
+                    print(f"❌ Error al eliminar archivo {canvas_file_id}: {str(e)}")
+
+            # Procesar archivos nuevos/actualizados
+            subidos_por_curso = []
+
+            for archivo in archivos_canvas:
+                canvas_file_id = str(archivo["id"])
+                filename = archivo["filename"]
+                updated_at = archivo.get("updated_at", "")
+
+                cursor.execute('''
+                    SELECT * FROM archivos_procesados 
+                    WHERE canvas_file_id = ? AND course_id = ?
+                ''', (canvas_file_id, course_id))
+                registro = cursor.fetchone()
+
+                if registro and registro[2] == updated_at:
+                    print(f"🔁 Sin cambios: {filename}")
                     continue
-                else:
-                    print(f"🔄 Archivo actualizado: {filename}")
 
-            try:
-                path = download_file(archivo)
-                file_id = subir_y_asociar_archivo(path)
-                os.remove(path)
-                registrar_archivo(cursor, canvas_file_id, filename, updated_at, file_id)
-                conn.commit()
-                subidos.append({"archivo": filename, "file_id": file_id})
-            except Exception as e:
-                print(f"❌ Error: {filename} → {str(e)}")
-                subidos.append({"archivo": filename, "error": str(e)})
+                try:
+                    path = download_file(archivo)
+                    file_id = subir_y_asociar_archivo(path, VECTOR_STORE_ID)
+                    os.remove(path)
+
+                    registrar_archivo(cursor, canvas_file_id, filename, updated_at, file_id, course_id)
+                    conn.commit()
+                    subidos_por_curso.append({"archivo": filename, "file_id": file_id})
+                except Exception as e:
+                    print(f"❌ Error con {filename}: {str(e)}")
+                    subidos_por_curso.append({"archivo": filename, "error": str(e)})
+
+            resultados_totales[course_id] = subidos_por_curso
 
         conn.close()
-        return jsonify({"archivos_subidos": subidos})
+        return jsonify({
+            "status": "ok",
+            "resultados_por_curso": resultados_totales
+        })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#Admin Page
 @main_bp.route("/admin")
 def admin():
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Obtener todos los cursos
+    cursor.execute("SELECT course_id, nombre, assistant_id, vector_store_id FROM cursos")
+    cursos_completos = cursor.fetchall()
+
+    # Obtener todos los archivos procesados
     cursor.execute("SELECT * FROM archivos_procesados")
     registros_db = cursor.fetchall()
 
-    try:
-        archivos_vs = listar_archivos_vector_store()
-    except Exception as e:
-        archivos_vs = []
-        print(f"⚠️ Error al obtener archivos del vector store: {e}")
+    # Obtener historial completo de consultas
+    cursor.execute('''
+        SELECT user_full_name, course_name, pregunta, respuesta, timestamp 
+        FROM historial_consultas 
+        ORDER BY timestamp DESC LIMIT 50
+    ''')
+    historial = cursor.fetchall()
 
+    # Obtener todas las consultas mensuales
     cursor.execute("SELECT user_id, course_id, mes, total FROM consultas ORDER BY mes DESC")
     registros_consulta = cursor.fetchall()
 
-    conn.close()
-    return render_template("admin.html", registros=registros_db, archivos_vs=archivos_vs, consultas=registros_consulta)
+    # Preparar archivos por curso
+    archivos_por_curso = {}
+    for curso in cursos_completos:
+        course_id = curso[0]
+        vector_store_id = curso[3]
 
+        archivos_por_curso[course_id] = {
+            "nombre": curso[1],
+            "archivos": listar_archivos_vector_store(vector_store_id),
+            "vector_store_id": vector_store_id
+        }
+
+    conn.close()
+
+    return render_template("admin.html",
+                           registros=registros_db,
+                           historial=historial,
+                           consultas=registros_consulta,
+                           cursos=cursos_completos,
+                           archivos_por_curso=archivos_por_curso)
+
+#Eliminar archivo
 @main_bp.route("/eliminar/<canvas_file_id>", methods=["POST"])
 def eliminar_archivo(canvas_file_id):
+    course_id = session.get("course_id")
+    curso_data = obtener_datos_curso(course_id)
+
+    if not curso_data:
+        return jsonify({"error": "❌ Curso no configurado"}), 400
+
+    VECTOR_STORE_ID = curso_data["vector_store_id"]
+    
+    # Verificar que el canvas_file_id sea válido
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT file_id_openai FROM archivos_procesados WHERE canvas_file_id = ?", (canvas_file_id,))
     row = cursor.fetchone()
     file_id_openai = row[0] if row else None
-
+    # Verificar que el archivo exista en la base de datos
     if file_id_openai:
         try:
             openai.vector_stores.files.delete(vector_store_id=VECTOR_STORE_ID, file_id=file_id_openai)
@@ -205,7 +256,19 @@ def eliminar_archivo(canvas_file_id):
         except Exception as e:
             print(f"❌ Error al eliminar de OpenAI: {e}")
 
+    # Eliminar de la base de datos
     cursor.execute("DELETE FROM archivos_procesados WHERE canvas_file_id = ?", (canvas_file_id,))
     conn.commit()
     conn.close()
     return jsonify({"status": "ok", "message": "Archivo eliminado"})
+
+#Ruta temporal para pruebas locales
+@main_bp.route("/test")
+def iniciar_sesion_local():
+    """Ruta temporal para pruebas locales"""
+    session["user_id"] = "local_user_123"
+    session["course_id"] = "91340000000002198"  # Un curso ya registrado
+    session["user_full_name"] = "Desarrollador Local"
+    session["course_name"] = "Curso de Prueba - Local"
+    print("🔑 Sesión iniciada localmente con usuario de prueba.")
+    return redirect("/")

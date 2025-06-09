@@ -10,7 +10,7 @@ import secrets
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from urllib.parse import urlencode
-from config import CANVAS_ISSUER, CANVAS_JWKS_URL, CANVAS_CLIENT_ID, CANVAS_DEPLOYMENT_ID
+from config import CANVAS_ISSUER, CANVAS_JWKS_URL, CANVAS_CLIENT_ID
 
 
 lti_bp = Blueprint('lti', __name__, url_prefix="/lti")
@@ -125,7 +125,7 @@ def launch():
         jwks_url = CANVAS_JWKS_URL
         client_id = CANVAS_CLIENT_ID
         issuer = CANVAS_ISSUER
-        deployment_id_expected = CANVAS_DEPLOYMENT_ID
+        deployment_id_expected = request.form.get("lti_deployment_id", "")
 
         # Obtener claves públicas
         jwks = requests.get(jwks_url).json()

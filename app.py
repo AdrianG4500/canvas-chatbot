@@ -7,7 +7,7 @@ import jwt
 import secrets
 import os
 from datetime import datetime, timedelta
-from config import PORT, LTI_CLIENT_IDS, VECTOR_STORE_ID, ASSISTANT_ID, SECRET_KEY
+from config import PORT, LTI_CLIENT_IDS, SECRET_KEY
 import logging
 
 
@@ -67,8 +67,6 @@ except Exception as e:
 
 # Configurar cliente LTI y OpenAI
 app.config["LTI_CLIENT_IDS"] = LTI_CLIENT_IDS
-app.config["ASSISTANT_ID"] = ASSISTANT_ID
-app.config["VECTOR_STORE_ID"] = VECTOR_STORE_ID
 
 # Registrar blueprints
 app.register_blueprint(main_bp)
