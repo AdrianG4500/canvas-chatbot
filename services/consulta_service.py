@@ -1,11 +1,14 @@
 from datetime import datetime
 from models.db import get_db_connection
+import logging
 import openai
 import time
 from utils.helpers import limpiar_respuesta_openai, limpiar_y_separar
 from flask import session
 
 def obtener_respuesta_openai(pregunta, assistant_id):
+    logging.info(f"📝 Pregunta: {pregunta}")
+    logging.info(f"🤖 Asistente ID: {assistant_id}")
     thread = openai.beta.threads.create()
     openai.beta.threads.messages.create(
         thread_id=thread.id,
