@@ -150,9 +150,9 @@ def launch():
             issuer=issuer
         )
 
-        
 
         if decoded.get("https://purl.imsglobal.org/spec/lti/claim/deployment_id") != deployment_id_expected:
+            logging.info(f"❌ Deployment ID no coincide: esperado {deployment_id_expected} - recibido {decoded.get('https://purl.imsglobal.org/spec/lti/claim/deployment_id')}")
             logging.info("❌ Deployment ID inválido")
             return "Deployment ID no válido", 400
 
