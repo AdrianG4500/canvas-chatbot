@@ -131,7 +131,8 @@ def obtener_datos_curso(course_id):
     if row:
         return dict(row)
     else:
-        raise Exception(f"No se encontró configuración para el curso {course_id}")
+        print(f"⚠️ Curso no registrado: {course_id}")
+        return None
     
 def registrar_consulta_completa(user_id, course_id, user_full_name, course_name, pregunta, respuesta):
     conn = get_db_connection()

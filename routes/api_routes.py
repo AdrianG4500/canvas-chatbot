@@ -1,5 +1,5 @@
 # routes/api_routes.py
-from flask import Blueprint
+from flask import Blueprint, jsonify, request
 from openai_utils.uploader import listar_archivos_vector_store
 
 api_bp = Blueprint('api', __name__)

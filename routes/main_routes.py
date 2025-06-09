@@ -29,12 +29,18 @@ def index():
     respuesta_formateada = None
     # Obtener course_id y user_id de la sesión
     course_id = session.get("course_id")
+    
+    if not course_id:
+        respuesta_formateada = "⚠️ Esta aplicación debe usarse desde Canvas."
+        return render_template("index.html", respuesta=markdown(respuesta_formateada))
+    
+    try:
+        curso_data = obtener_datos_curso(course_id)
+    except Exception as e:
+        print(f"❌ Error obteniendo datos del curso: {e}")
+        return "Curso no encontrado. Verifica que tengas permisos.", 403
+
     user_id = session.get("user_id")
-    curso_data = obtener_datos_curso(course_id)
-
-    if not curso_data:
-        return jsonify({"error": "❌ Curso no configurado"}), 400
-
     ASSISTANT_ID = curso_data["assistant_id"]
     VECTOR_STORE_ID = curso_data["vector_store_id"]
 
