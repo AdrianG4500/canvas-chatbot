@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from urllib.parse import urlencode
 from config import CANVAS_ISSUER, CANVAS_JWKS_URL, CANVAS_CLIENT_ID
+from models.db import obtener_datos_curso_por_deployment_id
 
 
 lti_bp = Blueprint('lti', __name__, url_prefix="/lti")
@@ -150,11 +151,21 @@ def launch():
             issuer=issuer
         )
 
+        # Obtener deployment_id desde el token
+        deployment_id = decoded.get("https://purl.imsglobal.org/spec/lti/claim/deployment_id") 
+        if not deployment_id:
+            logging.info("❌ No se encontró deployment_id en el token")
+            return "No se encontró deployment_id", 400
 
-        if decoded.get("https://purl.imsglobal.org/spec/lti/claim/deployment_id") != deployment_id_expected:
-            logging.info(f"❌ Deployment ID no coincide: esperado {deployment_id_expected} - recibido {decoded.get('https://purl.imsglobal.org/spec/lti/claim/deployment_id')}")
-            logging.info("❌ Deployment ID inválido")
-            return "Deployment ID no válido", 400
+        # Verificar que este deployment_id está asociado a algún curso
+        curso_data = obtener_datos_curso_por_deployment_id(deployment_id)
+
+        if not curso_data:
+            logging.info(f"❌ Deployment ID no reconocido: {deployment_id}")
+            return "⚠️ Este curso no está configurado aún.", 400
+
+        # Guarda course_id desde el curso encontrado, no desde el token
+        course_id = curso_data["course_id"]
 
         # Validación de nonce
         expected_nonce = session.get("nonce")

@@ -49,6 +49,7 @@ def init_db():
                 nombre TEXT NOT NULL,
                 assistant_id TEXT NOT NULL,
                 vector_store_id TEXT NOT NULL
+                lti_deployment_id TEXT
             )
         ''')
         conn.commit()
@@ -144,3 +145,16 @@ def registrar_consulta_completa(user_id, course_id, user_full_name, course_name,
     ''', (user_id, course_id, user_full_name, course_name, pregunta, respuesta))
     conn.commit()
     conn.close()
+
+def obtener_datos_curso_por_deployment_id(deployment_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM cursos WHERE lti_deployment_id = ?", (deployment_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        return dict(row)
+    else:
+        return None

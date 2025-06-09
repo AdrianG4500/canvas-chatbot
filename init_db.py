@@ -50,6 +50,7 @@ def init_db():
             nombre TEXT NOT NULL,
             assistant_id TEXT NOT NULL,
             vector_store_id TEXT NOT NULL
+            lti_deployment_id TEXT
         )
     ''')
 
